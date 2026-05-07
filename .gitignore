@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.local
+dist/
+.next/
+target/
+.anchor/
+
+# Solana
+*.so
+*.keypair
+
+# OS
+.DS_Store
