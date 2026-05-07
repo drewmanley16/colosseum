@@ -167,7 +167,7 @@ export default function Dashboard() {
                 </div>
 
                 <a
-                  href={`https://explorer.solana.com/address/${policy.pda}?cluster=devnet`}
+                  href={`https://explorer.solana.com/address/${policy.pda}?cluster=testnet`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block text-xs text-violet-400 hover:text-violet-300 font-mono"

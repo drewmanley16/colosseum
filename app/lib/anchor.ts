@@ -8,7 +8,7 @@ export const PROGRAM_ID = new PublicKey(
 );
 
 export const DEVNET_RPC =
-  process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+  process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.testnet.solana.com";
 
 export function getConnection() {
   return new Connection(DEVNET_RPC, "confirmed");

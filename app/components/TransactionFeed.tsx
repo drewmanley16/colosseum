@@ -81,7 +81,7 @@ export function TransactionFeed({ events }: TransactionFeedProps) {
 
                 {tx.success && tx.signature && (
                   <a
-                    href={`https://explorer.solana.com/tx/${tx.signature}?cluster=devnet`}
+                    href={`https://explorer.solana.com/tx/${tx.signature}?cluster=testnet`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-violet-400 hover:text-violet-300 font-mono"

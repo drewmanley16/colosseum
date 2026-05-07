@@ -12,7 +12,7 @@ appl = "J1fCzmaSM61TePcnuVGFbB55oDGWS13eYcepFMd2pNVd"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "testnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
