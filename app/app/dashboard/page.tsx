@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -12,7 +12,7 @@ const WalletMultiButton = dynamic(
 import { usePolicy } from "@/hooks/usePolicy";
 import { useAgentSocket } from "@/hooks/useAgentSocket";
 import { PolicyForm } from "@/components/PolicyForm";
-import { PolicyGauge } from "@/components/PolicyGauge";
+import { PolicyControlPanel } from "@/components/PolicyControlPanel";
 import { AgentTerminal } from "@/components/AgentTerminal";
 import { TransactionFeed } from "@/components/TransactionFeed";
 import { AgentFlow } from "@/components/AgentFlow";
@@ -30,19 +30,39 @@ export default function Dashboard() {
   const [agentBalance, setAgentBalance] = useState<number | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
-  const { policy, loading: policyLoading, fetchPolicy, createPolicy } = usePolicy(agentPubkey);
-  const { events, connected: wsConnected, startAgent, airdrop, getKeypair, clearEvents } =
+  const { policy, loading: policyLoading, fetchPolicy, createPolicy, updatePolicy, revokePolicy } =
+    usePolicy(agentPubkey);
+  const { events, connected: wsConnected, startAgent, airdrop, getKeypair, fetchBalance, clearEvents } =
     useAgentSocket();
 
+  // Fetch policy on mount and when agent/wallet changes
   useEffect(() => {
     if (publicKey && agentPubkey) fetchPolicy();
   }, [publicKey, agentPubkey, fetchPolicy]);
 
+  // Auto-refresh balance and policy after agent events
+  const refreshBalance = useCallback(async () => {
+    if (!agentPubkey) return;
+    const bal = await fetchBalance(agentPubkey);
+    if (bal !== null) setAgentBalance(bal);
+  }, [agentPubkey, fetchBalance]);
+
   useEffect(() => {
     const lastEvent = events[events.length - 1];
-    if (lastEvent?.type === "payment_success") fetchPolicy();
-    if (lastEvent?.type === "agent_done") setIsRunning(false);
-  }, [events, fetchPolicy]);
+    if (lastEvent?.type === "payment_success") {
+      fetchPolicy();
+      refreshBalance();
+    }
+    if (lastEvent?.type === "agent_done") {
+      setIsRunning(false);
+      refreshBalance();
+    }
+  }, [events, fetchPolicy, refreshBalance]);
+
+  // Fetch balance on mount if wallet exists
+  useEffect(() => {
+    if (agentPubkey) refreshBalance();
+  }, [agentPubkey, refreshBalance]);
 
   async function handleGenerateAgent() {
     try {
@@ -184,9 +204,16 @@ export default function Dashboard() {
                 Airdrop 1 SOL
               </button>
               <button
+                onClick={refreshBalance}
+                className="font-mono text-xs uppercase tracking-widest px-3 py-2 border transition-opacity hover:opacity-70"
+                style={{ borderColor: "var(--border)", color: "var(--ink-3)" }}
+              >
+                ↻ Refresh
+              </button>
+              <button
                 onClick={handleResetAgent}
                 className="font-mono text-xs uppercase tracking-widest px-3 py-2 border transition-opacity hover:opacity-70"
-                style={{ borderColor: "var(--border)", color: "var(--ink-3)", letterSpacing: "0.08em" }}
+                style={{ borderColor: "var(--border)", color: "var(--ink-3)" }}
               >
                 Reset
               </button>
@@ -204,51 +231,19 @@ export default function Dashboard() {
 
         {/* 3-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 border" style={{ borderColor: "var(--border)" }}>
-          {/* Left: Policy Manager */}
+          {/* Left: Policy Control Panel */}
           <div className="p-6 border-r" style={{ borderColor: "var(--border)", background: "var(--bg-card)" }}>
             <p className="font-mono text-xs uppercase tracking-widest mb-5" style={{ color: "var(--ink-3)" }}>
-              § Policy Manager
+              § Policy Control
             </p>
 
             {policy ? (
-              <div className="space-y-6">
-                <PolicyGauge
-                  spentToday={policy.spentToday}
-                  maxDailySpend={policy.maxDailySpend}
-                  isActive={policy.isActive}
-                />
-
-                <div className="border-t pt-4" style={{ borderColor: "var(--border)" }}>
-                  <p className="font-mono text-xs uppercase tracking-widest mb-2" style={{ color: "var(--ink-3)" }}>
-                    ▪ Approved Merchants
-                  </p>
-                  {policy.approvedMerchants.map((m) => (
-                    <div key={m} className="flex items-center gap-2 mb-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--accent)" }} />
-                      <span className="font-mono text-xs" style={{ color: "var(--ink-2)" }}>
-                        {m.slice(0, 8)}...
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="border-t pt-4" style={{ borderColor: "var(--border)" }}>
-                  <p className="font-mono text-xs uppercase tracking-widest mb-1" style={{ color: "var(--ink-3)" }}>▪ Expires</p>
-                  <p className="font-mono text-xs" style={{ color: "var(--ink-2)" }}>
-                    {new Date(policy.expiry * 1000).toLocaleString()}
-                  </p>
-                </div>
-
-                <a
-                  href={`https://explorer.solana.com/address/${policy.pda}?cluster=testnet`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block font-mono text-xs uppercase tracking-widest hover:underline"
-                  style={{ color: "var(--accent)" }}
-                >
-                  View on Explorer ↗
-                </a>
-              </div>
+              <PolicyControlPanel
+                policy={policy}
+                loading={policyLoading}
+                onUpdate={updatePolicy}
+                onRevoke={revokePolicy}
+              />
             ) : (
               agentPubkey ? (
                 <PolicyForm onSubmit={createPolicy} loading={policyLoading} />
@@ -263,7 +258,6 @@ export default function Dashboard() {
           {/* Middle: Agent Monitor */}
           <div className="p-6 border-r flex flex-col" style={{ borderColor: "var(--border)" }}>
             <AgentTerminal events={events} isConnected={wsConnected} />
-
             <div className="mt-5 pt-5 border-t" style={{ borderColor: "var(--border)" }}>
               <button
                 onClick={handleRunAgent}

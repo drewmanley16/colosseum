@@ -103,38 +103,35 @@ export function usePolicy(agentPublicKey: string | null) {
   );
 
   const updatePolicy = useCallback(
-    async (data: Partial<PolicyFormData>) => {
-      if (!publicKey || !agentPublicKey || !signTransaction || !signAllTransactions) return;
+    async (data: Partial<PolicyFormData & { isActive: boolean }>) => {
+      if (!publicKey || !agentPublicKey || !signTransaction || !signAllTransactions || !policy) return;
       setLoading(true);
       try {
-        const agentPubkey = new PublicKey(agentPublicKey);
         const program = getProgram(
           { publicKey, signTransaction, signAllTransactions },
           connection
         );
 
-        const merchants = data.approvedMerchants
+        const merchants = data.approvedMerchants != null
           ? data.approvedMerchants.filter((m) => m.trim()).map((m) => new PublicKey(m.trim()))
           : null;
 
-        const expiry = data.expiryHours
+        const expiry = data.expiryHours != null
           ? new BN(Math.floor(Date.now() / 1000) + data.expiryHours * 3600)
           : null;
 
+        const maxSpend = data.maxDailySol != null
+          ? new BN(solToLamports(data.maxDailySol))
+          : null;
+
+        const isActive = data.isActive !== undefined ? data.isActive : null;
+
         await program.methods
-          .updatePolicy(
-            data.maxDailySol ? new BN(solToLamports(data.maxDailySol)) : null,
-            merchants,
-            expiry,
-            null
-          )
-          .accounts({
-            owner: publicKey,
-            policyAccount: new PublicKey(policy!.pda),
-          })
+          .updatePolicy(maxSpend, merchants, expiry, isActive)
+          .accounts({ owner: publicKey, policyAccount: new PublicKey(policy.pda) })
           .rpc();
 
-        toast.success("Policy updated!");
+        toast.success("Policy updated");
         await fetchPolicy();
       } catch (err) {
         toast.error(`Failed: ${String(err).slice(0, 60)}`);

@@ -60,9 +60,10 @@ app.post("/api/agent/airdrop", async (req, res) => {
   }
 });
 
-app.get("/api/agent/balance", async (_req, res) => {
+app.get("/api/agent/balance", async (req, res) => {
   try {
-    const balance = await getAgentBalance();
+    const pubkey = req.query.pubkey as string | undefined;
+    const balance = await getAgentBalance(pubkey);
     res.json({ balance });
   } catch (err: unknown) {
     res.status(500).json({ error: String(err) });

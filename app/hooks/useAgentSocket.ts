@@ -75,5 +75,15 @@ export function useAgentSocket() {
     return res.json() as Promise<{ publicKey: string; secretKey: string }>;
   }, []);
 
-  return { events, connected, startAgent, airdrop, getKeypair, clearEvents };
+  const fetchBalance = useCallback(async (agentPublicKey: string): Promise<number | null> => {
+    try {
+      const res = await fetch(`${AGENT_URL}/api/agent/balance?pubkey=${agentPublicKey}`);
+      const data = await res.json();
+      return typeof data.balance === "number" ? data.balance : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  return { events, connected, startAgent, airdrop, getKeypair, fetchBalance, clearEvents };
 }
