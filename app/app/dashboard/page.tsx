@@ -59,10 +59,12 @@ export default function Dashboard() {
     const tid = toast.loading("Requesting airdrop...");
     try {
       const result = await airdrop();
-      setAgentBalance(result.balance);
-      toast.success(`Airdrop successful! Balance: ${result.balance?.toFixed(3)} SOL`, { id: tid });
-    } catch {
-      toast.error("Airdrop failed", { id: tid });
+      if (!result.success) throw new Error(result.error || "Airdrop failed");
+      const bal = typeof result.balance === "number" ? result.balance : null;
+      setAgentBalance(bal);
+      toast.success(`Airdrop successful! Balance: ${bal != null ? bal.toFixed(3) : "??"} SOL`, { id: tid });
+    } catch (err) {
+      toast.error(String(err).replace("Error: ", ""), { id: tid });
     }
   }
 
@@ -123,7 +125,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-xs text-gray-500 mb-0.5">Balance</p>
                 <p className="font-mono text-sm text-white">
-                  {agentBalance !== null ? `${agentBalance.toFixed(3)} SOL` : "—"}
+                  {agentBalance != null ? `${agentBalance.toFixed(3)} SOL` : "—"}
                 </p>
               </div>
               <button
