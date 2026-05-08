@@ -195,7 +195,7 @@ The policy owner's Solana address is: ${ownerAddress}`,
             emit({
               type: "payment_success",
               message: `✓ Payment approved: ${service.feeLamports / 1e9} SOL → ${service.name}`,
-              data: { signature: payResult.signature, service: service.name },
+              data: { signature: payResult.signature, service: service.name, amount: service.feeLamports },
               timestamp: Date.now(),
             });
           } else {
