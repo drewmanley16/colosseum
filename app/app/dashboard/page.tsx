@@ -20,8 +20,12 @@ import toast from "react-hot-toast";
 
 export default function Dashboard() {
   const { publicKey } = useWallet();
-  const [agentPubkey, setAgentPubkey] = useState<string | null>(null);
-  const [agentSecretKey, setAgentSecretKey] = useState<string | null>(null);
+  const [agentPubkey, setAgentPubkey] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("agent_pubkey") : null
+  );
+  const [agentSecretKey, setAgentSecretKey] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("agent_secret") : null
+  );
   const [agentBalance, setAgentBalance] = useState<number | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -44,10 +48,20 @@ export default function Dashboard() {
       const kp = await getKeypair();
       setAgentPubkey(kp.publicKey);
       setAgentSecretKey(kp.secretKey);
+      localStorage.setItem("agent_pubkey", kp.publicKey);
+      localStorage.setItem("agent_secret", kp.secretKey);
       toast.success("Agent wallet generated");
     } catch {
       toast.error("Could not reach agent server — is it running?");
     }
+  }
+
+  function handleResetAgent() {
+    localStorage.removeItem("agent_pubkey");
+    localStorage.removeItem("agent_secret");
+    setAgentPubkey(null);
+    setAgentSecretKey(null);
+    setAgentBalance(null);
   }
 
   async function handleAirdrop() {
@@ -167,6 +181,13 @@ export default function Dashboard() {
                 style={{ borderColor: "var(--border)", color: "var(--ink-2)", letterSpacing: "0.08em" }}
               >
                 Airdrop 1 SOL
+              </button>
+              <button
+                onClick={handleResetAgent}
+                className="font-mono text-xs uppercase tracking-widest px-3 py-2 border transition-opacity hover:opacity-70"
+                style={{ borderColor: "var(--border)", color: "var(--ink-3)", letterSpacing: "0.08em" }}
+              >
+                Reset
               </button>
             </div>
           )}
