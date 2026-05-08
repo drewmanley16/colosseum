@@ -70,7 +70,7 @@ function deriveSteps(events: AgentEvent[]): Step[] {
 function stepBorderColor(status: StepStatus): string {
   switch (status) {
     case "active":  return "var(--accent)";
-    case "success": return "var(--accent)";
+    case "success": return "#16a34a";
     case "failed":  return "#dc2626";
     default:        return "var(--border)";
   }
@@ -79,7 +79,7 @@ function stepBorderColor(status: StepStatus): string {
 function stepBg(status: StepStatus): string {
   switch (status) {
     case "active":  return "var(--accent-light)";
-    case "success": return "var(--accent-light)";
+    case "success": return "#f0fdf4";
     case "failed":  return "#fef2f2";
     default:        return "var(--bg-card)";
   }
@@ -87,8 +87,8 @@ function stepBg(status: StepStatus): string {
 
 function stepNumColor(status: StepStatus): string {
   switch (status) {
-    case "active":
-    case "success": return "var(--accent)";
+    case "active":  return "var(--accent)";
+    case "success": return "#16a34a";
     case "failed":  return "#dc2626";
     default:        return "var(--ink-3)";
   }
@@ -114,7 +114,7 @@ function statusBadge(status: StepStatus) {
     );
   }
   if (status === "success") {
-    return <span className="font-mono text-xs" style={{ color: "var(--accent)" }}>✓</span>;
+    return <span className="font-mono text-xs" style={{ color: "#16a34a" }}>✓</span>;
   }
   if (status === "failed") {
     return <span className="font-mono text-xs" style={{ color: "#dc2626" }}>✗</span>;
