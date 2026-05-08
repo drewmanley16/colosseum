@@ -16,6 +16,7 @@ import { PolicyGauge } from "@/components/PolicyGauge";
 import { AgentTerminal } from "@/components/AgentTerminal";
 import { TransactionFeed } from "@/components/TransactionFeed";
 import { AgentFlow } from "@/components/AgentFlow";
+import { ServiceResultPanel } from "@/components/ServiceResultPanel";
 import toast from "react-hot-toast";
 
 export default function Dashboard() {
@@ -197,6 +198,9 @@ export default function Dashboard() {
         <div className="mb-6">
           <AgentFlow events={events} />
         </div>
+
+        {/* Service Results */}
+        <ServiceResultPanel events={events} />
 
         {/* 3-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 border" style={{ borderColor: "var(--border)" }}>

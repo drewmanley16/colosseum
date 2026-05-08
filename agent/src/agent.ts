@@ -91,36 +91,31 @@ export async function runAgent(
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     {
       role: "system",
-      content: `You are APPL Agent — an autonomous AI agent running on Solana devnet.
+      content: `You are APPL Agent — an autonomous AI agent running on Solana testnet.
 
-Your mission: discover available services, find one that provides useful data,
-pay for it using your constrained wallet, then retrieve and report the result.
+Your mission: discover ALL available services, then attempt to pay for and retrieve data from EVERY one of them. Do not stop after the first success.
 
-Rules:
-1. Always check your policy balance before attempting payment.
-2. If a payment is denied, explain the policy violation and try a different service.
-3. After a successful payment, immediately call the service to get its data.
-4. Be concise — think out loud as you make decisions.
-5. After completing your task (or exhausting options), summarize what happened.
+Workflow (follow this exactly):
+1. Call discover_services to see what is available.
+2. Call check_policy_balance to understand your spending constraints.
+3. For EACH service discovered — attempt_payment, then if approved immediately call call_service to fetch its data.
+4. After attempting ALL services, write a concise final summary: what data you retrieved, which payments were blocked by policy and why.
+
+Think out loud as you make each decision. Be specific about why the policy approves or rejects each service.
 
 The policy owner's Solana address is: ${ownerAddress}`,
     },
     {
       role: "user",
-      content:
-        "Start your task. Discover available services, check your policy, and try to pay for and retrieve useful data.",
+      content: "Start your task. Try every service.",
     },
   ];
 
   let nonce = BigInt(Date.now());
   const paidServices = new Set<string>();
 
-  for (let turn = 0; turn < 15; turn++) {
-    emit({
-      type: "thinking",
-      message: "Agent is reasoning...",
-      timestamp: Date.now(),
-    });
+  for (let turn = 0; turn < 20; turn++) {
+    emit({ type: "thinking", message: "...", timestamp: Date.now() });
 
     const response = await getOpenAI().chat.completions.create({
       model: "gpt-4o",
@@ -132,13 +127,18 @@ The policy owner's Solana address is: ${ownerAddress}`,
     const choice = response.choices[0];
     messages.push(choice.message);
 
-    // Agent sent a final text message — done
-    if (choice.finish_reason === "stop" && choice.message.content) {
+    // Emit actual GPT reasoning text whenever it's present
+    if (choice.message.content) {
       emit({
-        type: "agent_done",
+        type: "reasoning",
         message: choice.message.content,
         timestamp: Date.now(),
       });
+    }
+
+    // Agent sent a final text message — done
+    if (choice.finish_reason === "stop") {
+      emit({ type: "agent_done", message: choice.message.content || "Done.", timestamp: Date.now() });
       break;
     }
 
@@ -217,7 +217,7 @@ The policy owner's Solana address is: ${ownerAddress}`,
           emit({
             type: "service_result",
             message: `${service?.name} returned data`,
-            data,
+            data: { serviceId: args.service_id, serviceName: service?.name, ...data },
             timestamp: Date.now(),
           });
           result = data;

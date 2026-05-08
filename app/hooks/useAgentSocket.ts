@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 export type AgentEventType =
   | "thinking"
+  | "reasoning"
   | "tool_call"
   | "tool_result"
   | "payment_attempt"
