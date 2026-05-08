@@ -59,7 +59,12 @@ export default function Dashboard() {
       setAgentBalance(bal);
       toast.success(`Airdrop successful! Balance: ${bal != null ? bal.toFixed(3) : "??"} SOL`, { id: tid });
     } catch (err) {
-      toast.error(String(err).replace("Error: ", ""), { id: tid });
+      const msg = String(err);
+      if (msg.includes("429") || msg.includes("airdrop limit")) {
+        toast.error("Faucet rate limit — visit faucet.solana.com to top up manually", { id: tid });
+      } else {
+        toast.error(msg.replace("Error: ", ""), { id: tid });
+      }
     }
   }
 
