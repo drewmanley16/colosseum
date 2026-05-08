@@ -22,11 +22,12 @@ export interface AgentEvent {
 }
 
 const AGENT_URL = process.env.NEXT_PUBLIC_AGENT_URL || "http://localhost:3001";
-const WS_URL = AGENT_URL.replace("http", "ws");
+const WS_URL = AGENT_URL.replace(/^http/, "ws");
 
 export function useAgentSocket() {
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [connected, setConnected] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -34,13 +35,19 @@ export function useAgentSocket() {
     ws.current = socket;
 
     socket.onopen = () => setConnected(true);
-    socket.onclose = () => setConnected(false);
+    socket.onclose = () => { setConnected(false); setSessionId(null); };
     socket.onmessage = (e) => {
       try {
-        const event: AgentEvent = JSON.parse(e.data);
+        const msg = JSON.parse(e.data);
+        // First message from server is always the session handshake
+        if (msg.type === "session") {
+          setSessionId(msg.sessionId);
+          return;
+        }
+        const event = msg as AgentEvent;
         setEvents((prev) => [...prev, event]);
       } catch {
-        // ignore malformed events
+        // ignore malformed messages
       }
     };
 
@@ -51,14 +58,15 @@ export function useAgentSocket() {
 
   const startAgent = useCallback(
     async (ownerAddress: string, agentSecretKey: string) => {
+      if (!sessionId) throw new Error("WebSocket session not ready");
       clearEvents();
       await fetch(`${AGENT_URL}/api/agent/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerAddress, agentSecretKey }),
+        body: JSON.stringify({ ownerAddress, agentSecretKey, sessionId }),
       });
     },
-    [clearEvents]
+    [clearEvents, sessionId]
   );
 
   const airdrop = useCallback(async (agentPublicKey?: string) => {
@@ -85,5 +93,5 @@ export function useAgentSocket() {
     }
   }, []);
 
-  return { events, connected, startAgent, airdrop, getKeypair, fetchBalance, clearEvents };
+  return { events, connected, sessionId, startAgent, airdrop, getKeypair, fetchBalance, clearEvents };
 }

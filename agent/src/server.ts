@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
+import { randomUUID } from "crypto";
 import * as dotenv from "dotenv";
 import { runAgent } from "./agent";
 import { airdropAgent, getAgentBalance } from "./tools/solana";
@@ -18,30 +19,33 @@ app.use(express.json());
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
-const clients = new Set<WebSocket>();
+// Session map: sessionId → WebSocket — each user gets their own channel
+const sessions = new Map<string, WebSocket>();
 
 wss.on("connection", (ws) => {
-  clients.add(ws);
-  ws.on("close", () => clients.delete(ws));
+  const sessionId = randomUUID();
+  sessions.set(sessionId, ws);
+
+  // Send session ID to client so it can include it in /api/agent/start
+  ws.send(JSON.stringify({ type: "session", sessionId }));
+
+  ws.on("close", () => sessions.delete(sessionId));
 });
 
-function broadcast(event: AgentEvent) {
-  const data = JSON.stringify(event);
-  for (const client of clients) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
-    }
+function emitToSession(sessionId: string, event: AgentEvent) {
+  const ws = sessions.get(sessionId);
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(event));
   }
 }
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true });
+  res.json({ ok: true, sessions: sessions.size });
 });
 
 app.get("/api/agent/keypair", (_req, res) => {
-  // Generate a fresh agent keypair for this session
   const keypair = Keypair.generate();
   res.json({
     publicKey: keypair.publicKey.toString(),
@@ -71,24 +75,24 @@ app.get("/api/agent/balance", async (req, res) => {
 });
 
 app.post("/api/agent/start", async (req, res) => {
-  const { ownerAddress, agentSecretKey } = req.body;
+  const { ownerAddress, agentSecretKey, sessionId } = req.body as {
+    ownerAddress?: string;
+    agentSecretKey?: string;
+    sessionId?: string;
+  };
 
-  if (!ownerAddress) {
-    res.status(400).json({ error: "ownerAddress required" });
-    return;
-  }
-
-  if (!agentSecretKey) {
-    res.status(400).json({ error: "agentSecretKey required" });
-    return;
+  if (!ownerAddress) { res.status(400).json({ error: "ownerAddress required" }); return; }
+  if (!agentSecretKey) { res.status(400).json({ error: "agentSecretKey required" }); return; }
+  if (!sessionId || !sessions.has(sessionId)) {
+    res.status(400).json({ error: "valid sessionId required" }); return;
   }
 
   res.json({ started: true });
 
   runAgent(ownerAddress, agentSecretKey, (event) => {
-    broadcast(event);
+    emitToSession(sessionId, event);
   }).catch((err) => {
-    broadcast({
+    emitToSession(sessionId, {
       type: "error",
       message: String(err),
       timestamp: Date.now(),
