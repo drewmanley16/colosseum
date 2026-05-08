@@ -127,12 +127,12 @@ export async function executeConstrainedPayment(
     console.error("executeConstrainedPayment error:", err);
     const error = err as { message?: string; logs?: string[]; error?: { errorCode?: { code?: string } } };
     const errorCode = error?.error?.errorCode?.code || "UnknownError";
-    // Extract the most useful part of the error for display
-    const logs = error?.logs?.join("\n") || "";
+    const logs = error?.logs || [];
     const message = error?.message || String(err);
-    const display = logs
-      ? logs.split("\n").find((l) => l.includes("Error") || l.includes("failed")) || message
-      : message;
+    // Try to find the most useful line from logs
+    const logLine = logs.find((l) => l.includes("Error") || l.includes("failed") || l.includes("insufficient"));
+    // Fall back to message, stripping noisy prefixes
+    const display = logLine || (message.includes("insufficient lamports") ? "InsufficientFunds — airdrop the agent wallet" : message.split("\n")[0]);
     return { success: false, error: display, errorCode };
   }
 }

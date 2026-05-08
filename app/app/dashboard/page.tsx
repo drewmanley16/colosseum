@@ -15,6 +15,7 @@ import { PolicyForm } from "@/components/PolicyForm";
 import { PolicyGauge } from "@/components/PolicyGauge";
 import { AgentTerminal } from "@/components/AgentTerminal";
 import { TransactionFeed } from "@/components/TransactionFeed";
+import { AgentFlow } from "@/components/AgentFlow";
 import toast from "react-hot-toast";
 
 export default function Dashboard() {
@@ -164,6 +165,11 @@ export default function Dashboard() {
               </button>
             </div>
           )}
+        </div>
+
+        {/* Agent Pipeline */}
+        <div className="mb-6">
+          <AgentFlow events={events} />
         </div>
 
         {/* 3-column layout */}
