@@ -100,6 +100,13 @@ app.post("/api/agent/start", async (req, res) => {
   });
 });
 
+// Keep-alive ping every 10 minutes to prevent Render free-tier sleep during a session
+setInterval(() => {
+  for (const ws of sessions.values()) {
+    if (ws.readyState === WebSocket.OPEN) ws.ping();
+  }
+}, 10 * 60 * 1000);
+
 // ─── Start ───────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3001;

@@ -31,27 +31,35 @@ export function useAgentSocket() {
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const socket = new WebSocket(WS_URL);
-    ws.current = socket;
+    let socket: WebSocket;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+    let dead = false;
 
-    socket.onopen = () => setConnected(true);
-    socket.onclose = () => { setConnected(false); setSessionId(null); };
-    socket.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        // First message from server is always the session handshake
-        if (msg.type === "session") {
-          setSessionId(msg.sessionId);
-          return;
-        }
-        const event = msg as AgentEvent;
-        setEvents((prev) => [...prev, event]);
-      } catch {
-        // ignore malformed messages
-      }
+    function connect() {
+      socket = new WebSocket(WS_URL);
+      ws.current = socket;
+
+      socket.onopen = () => setConnected(true);
+      socket.onclose = () => {
+        setConnected(false);
+        setSessionId(null);
+        if (!dead) reconnectTimer = setTimeout(connect, 3000);
+      };
+      socket.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === "session") { setSessionId(msg.sessionId); return; }
+          setEvents((prev) => [...prev, msg as AgentEvent]);
+        } catch { /* ignore */ }
+      };
+    }
+
+    connect();
+    return () => {
+      dead = true;
+      clearTimeout(reconnectTimer);
+      socket.close();
     };
-
-    return () => socket.close();
   }, []);
 
   const clearEvents = useCallback(() => setEvents([]), []);
