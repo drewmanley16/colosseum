@@ -17,10 +17,10 @@ function getConnection(): Connection {
   return new Connection(rpc, "confirmed");
 }
 
-function loadAgentKeypair(): Keypair {
-  const secretKey = process.env.AGENT_SECRET_KEY;
-  if (!secretKey) throw new Error("AGENT_SECRET_KEY not set");
-  return Keypair.fromSecretKey(bs58.decode(secretKey));
+function loadAgentKeypair(secretKeyBase58?: string): Keypair {
+  const key = secretKeyBase58 || process.env.AGENT_SECRET_KEY;
+  if (!key) throw new Error("AGENT_SECRET_KEY not set");
+  return Keypair.fromSecretKey(bs58.decode(key));
 }
 
 function getPolicyPDA(ownerPubkey: PublicKey, agentPubkey: PublicKey): PublicKey {
@@ -42,11 +42,12 @@ function getPaymentRecordPDA(policyPubkey: PublicKey, nonce: bigint): PublicKey 
 }
 
 export async function checkPolicyBalance(
-  ownerAddress: string
+  ownerAddress: string,
+  agentSecretKey?: string
 ): Promise<PolicyState | null> {
   try {
     const connection = getConnection();
-    const agentKeypair = loadAgentKeypair();
+    const agentKeypair = loadAgentKeypair(agentSecretKey);
     const ownerPubkey = new PublicKey(ownerAddress);
     const policyPDA = getPolicyPDA(ownerPubkey, agentKeypair.publicKey);
 
@@ -82,11 +83,12 @@ export async function executeConstrainedPayment(
   ownerAddress: string,
   recipientAddress: string,
   amountLamports: number,
-  nonce: bigint
+  nonce: bigint,
+  agentSecretKey?: string
 ): Promise<PaymentResult> {
   try {
     const connection = getConnection();
-    const agentKeypair = loadAgentKeypair();
+    const agentKeypair = loadAgentKeypair(agentSecretKey);
     const ownerPubkey = new PublicKey(ownerAddress);
     const recipientPubkey = new PublicKey(recipientAddress);
     const policyPDA = getPolicyPDA(ownerPubkey, agentKeypair.publicKey);

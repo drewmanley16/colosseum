@@ -86,6 +86,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 
 export async function runAgent(
   ownerAddress: string,
+  agentSecretKey: string,
   emit: (event: AgentEvent) => void
 ): Promise<void> {
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -161,7 +162,7 @@ The policy owner's Solana address is: ${ownerAddress}`,
         });
         result = services;
       } else if (toolCall.function.name === "check_policy_balance") {
-        const policy = await checkPolicyBalance(args.owner_address);
+        const policy = await checkPolicyBalance(args.owner_address, agentSecretKey);
         emit({
           type: "tool_call",
           message: policy
@@ -187,7 +188,8 @@ The policy owner's Solana address is: ${ownerAddress}`,
             args.owner_address,
             service.wallet,
             service.feeLamports,
-            nonce++
+            nonce++,
+            agentSecretKey
           );
 
           if (payResult.success) {

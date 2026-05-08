@@ -9,6 +9,8 @@ const WalletMultiButton = dynamic(
   () => import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
   { ssr: false }
 );
+import { Keypair } from "@solana/web3.js";
+import bs58 from "bs58";
 import { usePolicy } from "@/hooks/usePolicy";
 import { useAgentSocket } from "@/hooks/useAgentSocket";
 import { PolicyForm } from "@/components/PolicyForm";
@@ -20,7 +22,7 @@ import { ServiceResultPanel } from "@/components/ServiceResultPanel";
 import toast from "react-hot-toast";
 
 export default function Dashboard() {
-  const { publicKey } = useWallet();
+  const { publicKey, signMessage } = useWallet();
   const [agentPubkey, setAgentPubkey] = useState<string | null>(() =>
     typeof window !== "undefined" ? localStorage.getItem("agent_pubkey") : null
   );
@@ -65,15 +67,27 @@ export default function Dashboard() {
   }, [agentPubkey, refreshBalance]);
 
   async function handleGenerateAgent() {
+    if (!signMessage) {
+      toast.error("Wallet does not support message signing");
+      return;
+    }
+    const tid = toast.loading("Sign the message in your wallet...");
     try {
-      const kp = await getKeypair();
-      setAgentPubkey(kp.publicKey);
-      setAgentSecretKey(kp.secretKey);
-      localStorage.setItem("agent_pubkey", kp.publicKey);
-      localStorage.setItem("agent_secret", kp.secretKey);
-      toast.success("Agent wallet generated");
+      // Derive a deterministic keypair from the user's wallet signature.
+      // Same wallet → same signature → same agent keypair, always.
+      const message = new TextEncoder().encode("APPL Agent Keypair v1");
+      const signature = await signMessage(message);
+      const seed = signature.slice(0, 32);
+      const kp = Keypair.fromSeed(seed);
+      const pubkey = kp.publicKey.toString();
+      const secret = bs58.encode(kp.secretKey);
+      setAgentPubkey(pubkey);
+      setAgentSecretKey(secret);
+      localStorage.setItem("agent_pubkey", pubkey);
+      localStorage.setItem("agent_secret", secret);
+      toast.success("Agent linked to your wallet", { id: tid });
     } catch {
-      toast.error("Could not reach agent server — is it running?");
+      toast.error("Signature cancelled", { id: tid });
     }
   }
 
@@ -182,7 +196,7 @@ export default function Dashboard() {
               className="font-mono text-xs font-bold uppercase tracking-widest px-5 py-2.5 border transition-colors hover:opacity-80"
               style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--accent-light)", letterSpacing: "0.1em" }}
             >
-              ▪ Generate Agent Wallet
+              ▪ Link Agent to Wallet
             </button>
           ) : (
             <div className="flex flex-wrap items-center gap-6">

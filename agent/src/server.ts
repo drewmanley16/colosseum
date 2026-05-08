@@ -78,15 +78,14 @@ app.post("/api/agent/start", async (req, res) => {
     return;
   }
 
-  // Set agent keypair for this run
-  if (agentSecretKey) {
-    process.env.AGENT_SECRET_KEY = agentSecretKey;
+  if (!agentSecretKey) {
+    res.status(400).json({ error: "agentSecretKey required" });
+    return;
   }
 
   res.json({ started: true });
 
-  // Run agent asynchronously, streaming events via WebSocket
-  runAgent(ownerAddress, (event) => {
+  runAgent(ownerAddress, agentSecretKey, (event) => {
     broadcast(event);
   }).catch((err) => {
     broadcast({
