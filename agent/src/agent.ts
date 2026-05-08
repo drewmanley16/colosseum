@@ -10,7 +10,9 @@ import {
   executeConstrainedPayment,
 } from "./tools/solana";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAI() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
@@ -120,7 +122,7 @@ The policy owner's Solana address is: ${ownerAddress}`,
       timestamp: Date.now(),
     });
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: "gpt-4o",
       messages,
       tools: TOOLS,
