@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { PolicyFormData } from "@/hooks/usePolicy";
 
-// Pre-registered mock service wallets (match agent/src/tools/services.ts)
 const PRESET_MERCHANTS = [
   { name: "WeatherBot", wallet: "Hxr5V6DGVQn8KZEVY6FRXMqYvHTmBX9y3hkWMuHPRTe1" },
   { name: "PriceBot", wallet: "7yMW8N6ZqMVshm2kRbzVBVKtXvEj2jMv5qVqnK9LPpUi" },
@@ -31,19 +30,14 @@ export function PolicyForm({ onSubmit, loading, initial }: PolicyFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await onSubmit({
-      maxDailySol,
-      approvedMerchants: selectedMerchants,
-      expiryHours,
-    });
+    await onSubmit({ maxDailySol, approvedMerchants: selectedMerchants, expiryHours });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Daily spend limit */}
       <div>
-        <label className="block text-xs font-medium text-gray-400 mb-2">
-          Max Daily Spend
+        <label className="block font-mono text-xs uppercase tracking-widest mb-2" style={{ color: "var(--ink-3)" }}>
+          ▪ Max Daily Spend
         </label>
         <div className="flex items-center gap-3">
           <input
@@ -53,23 +47,25 @@ export function PolicyForm({ onSubmit, loading, initial }: PolicyFormProps) {
             step="0.001"
             value={maxDailySol}
             onChange={(e) => setMaxDailySol(parseFloat(e.target.value))}
-            className="flex-1 accent-violet-500"
+            className="flex-1"
+            style={{ accentColor: "var(--accent)" }}
           />
-          <span className="text-sm font-mono text-white w-20 text-right">
+          <span className="font-mono text-sm font-bold w-20 text-right" style={{ color: "var(--ink)" }}>
             {maxDailySol.toFixed(3)} SOL
           </span>
         </div>
+        <div className="h-1 mt-1 border-b" style={{ borderColor: "var(--border)" }} />
       </div>
 
-      {/* Expiry */}
       <div>
-        <label className="block text-xs font-medium text-gray-400 mb-2">
-          Expires In
+        <label className="block font-mono text-xs uppercase tracking-widest mb-2" style={{ color: "var(--ink-3)" }}>
+          ▪ Expires In
         </label>
         <select
           value={expiryHours}
           onChange={(e) => setExpiryHours(parseInt(e.target.value))}
-          className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500"
+          className="w-full px-3 py-2 font-mono text-xs border focus:outline-none"
+          style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--ink)" }}
         >
           <option value={1}>1 hour</option>
           <option value={6}>6 hours</option>
@@ -79,38 +75,40 @@ export function PolicyForm({ onSubmit, loading, initial }: PolicyFormProps) {
         </select>
       </div>
 
-      {/* Approved merchants */}
       <div>
-        <label className="block text-xs font-medium text-gray-400 mb-2">
-          Approved Merchants
+        <label className="block font-mono text-xs uppercase tracking-widest mb-2" style={{ color: "var(--ink-3)" }}>
+          ▪ Approved Merchants
         </label>
-        <div className="space-y-2">
-          {PRESET_MERCHANTS.map((m) => (
-            <button
-              type="button"
-              key={m.wallet}
-              onClick={() => toggleMerchant(m.wallet)}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition-colors ${
-                selectedMerchants.includes(m.wallet)
-                  ? "bg-violet-900/40 border-violet-600/60 text-violet-200"
-                  : "bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-600"
-              }`}
-            >
-              <span className="font-medium">{m.name}</span>
-              <span className="font-mono text-xs opacity-60">
-                {m.wallet.slice(0, 8)}...
-              </span>
-            </button>
-          ))}
+        <div className="space-y-1.5">
+          {PRESET_MERCHANTS.map((m) => {
+            const selected = selectedMerchants.includes(m.wallet);
+            return (
+              <button
+                type="button"
+                key={m.wallet}
+                onClick={() => toggleMerchant(m.wallet)}
+                className="w-full flex items-center justify-between px-3 py-2 border font-mono text-xs transition-colors"
+                style={{
+                  borderColor: selected ? "var(--accent)" : "var(--border)",
+                  background: selected ? "var(--accent-light)" : "var(--bg)",
+                  color: selected ? "var(--accent)" : "var(--ink-2)",
+                }}
+              >
+                <span className="font-bold uppercase">{m.name}</span>
+                <span style={{ opacity: 0.6 }}>{m.wallet.slice(0, 8)}...</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <button
         type="submit"
         disabled={loading || selectedMerchants.length === 0}
-        className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-medium text-sm transition-colors"
+        className="w-full py-2.5 font-mono text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80 disabled:opacity-40"
+        style={{ background: "var(--accent)", color: "#fff", letterSpacing: "0.1em" }}
       >
-        {loading ? "Sending..." : "Create Policy Onchain"}
+        {loading ? "Sending..." : "▪ Create Policy Onchain"}
       </button>
     </form>
   );

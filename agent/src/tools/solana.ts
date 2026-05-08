@@ -124,9 +124,16 @@ export async function executeConstrainedPayment(
 
     return { success: true, signature: tx };
   } catch (err: unknown) {
-    const error = err as { message?: string; error?: { errorCode?: { code?: string } } };
+    console.error("executeConstrainedPayment error:", err);
+    const error = err as { message?: string; logs?: string[]; error?: { errorCode?: { code?: string } } };
     const errorCode = error?.error?.errorCode?.code || "UnknownError";
-    return { success: false, error: error?.message || String(err), errorCode };
+    // Extract the most useful part of the error for display
+    const logs = error?.logs?.join("\n") || "";
+    const message = error?.message || String(err);
+    const display = logs
+      ? logs.split("\n").find((l) => l.includes("Error") || l.includes("failed")) || message
+      : message;
+    return { success: false, error: display, errorCode };
   }
 }
 

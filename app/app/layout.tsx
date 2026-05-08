@@ -30,13 +30,13 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-gray-950 text-white">
+      <body className="min-h-full flex flex-col" style={{ background: "var(--bg)", color: "var(--ink)" }}>
         <WalletContextProvider>
           {children}
           <Toaster
             position="bottom-right"
             toastOptions={{
-              style: { background: "#1f2937", color: "#f9fafb" },
+              style: { background: "var(--bg-card)", color: "var(--ink)", border: "1px solid var(--border)" },
             }}
           />
         </WalletContextProvider>

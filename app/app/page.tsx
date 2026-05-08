@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
 import { useWallet } from "@solana/wallet-adapter-react";
 
 const WalletMultiButton = dynamic(
@@ -14,82 +13,140 @@ export default function Home() {
   const { connected } = useWallet();
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4 bg-gray-950">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-violet-900/20 via-gray-950 to-gray-950 pointer-events-none" />
-
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="relative z-10 text-center max-w-3xl"
-      >
-        <div className="inline-flex items-center gap-2 bg-violet-950/60 border border-violet-500/30 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-8">
-          <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
-          Colosseum Frontier Hackathon
+    <main className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
+      {/* Nav */}
+      <nav className="flex items-center justify-between px-8 py-4 border-b" style={{ borderColor: "var(--border)" }}>
+        <span className="font-mono text-sm font-bold tracking-widest uppercase" style={{ color: "var(--ink)" }}>
+          ▪ APPL ▪
+        </span>
+        <div className="flex items-center gap-6">
+          <span className="font-mono text-xs uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
+            ▪ Colosseum Frontier
+          </span>
+          <WalletMultiButton
+            style={{
+              background: "var(--accent)",
+              color: "#fff",
+              fontFamily: "var(--font-geist-mono)",
+              fontSize: "12px",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              padding: "8px 18px",
+              border: "none",
+              borderRadius: "2px",
+              height: "auto",
+            }}
+          />
         </div>
+      </nav>
 
-        <h1 className="text-6xl font-bold tracking-tight mb-4">
-          <span className="text-white">APPL</span>
-          <span className="text-violet-400">.</span>
-        </h1>
-        <p className="text-xl text-gray-400 mb-3 font-mono">
-          Agent Permissions &amp; Policy Layer
-        </p>
-        <p className="text-base text-gray-500 mb-12 max-w-xl mx-auto leading-relaxed">
-          Programmable onchain policies for autonomous AI agents on Solana.
-          Define exactly what your agents can spend — enforced at the protocol
-          level, not the application layer.
-        </p>
+      {/* Hero */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0">
+        <div className="flex flex-col justify-center px-12 py-20 border-r" style={{ borderColor: "var(--border)" }}>
+          <p className="font-mono text-xs uppercase tracking-widest mb-6" style={{ color: "var(--accent)" }}>
+            ▪ Solana · Testnet · AI Agents
+          </p>
+          <h1 className="font-bold uppercase leading-none mb-6" style={{ fontSize: "clamp(48px, 7vw, 88px)", letterSpacing: "-0.02em", color: "var(--ink)" }}>
+            AGENT<br />
+            PERMISSIONS<br />
+            <span style={{ color: "var(--accent)" }}>&amp; POLICY</span><br />
+            LAYER.
+          </h1>
+          <p className="font-mono text-sm leading-relaxed mb-10 max-w-md" style={{ color: "var(--ink-2)" }}>
+            Programmable onchain policies that constrain autonomous AI agents.
+            Define what they can spend — enforced at the protocol level, not the
+            application layer.
+          </p>
 
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
-          {[
-            "Daily spend limits",
-            "Approved merchants",
-            "Expiry enforcement",
-            "Immutable audit log",
-          ].map((f) => (
-            <span
-              key={f}
-              className="text-sm px-3 py-1 rounded-full bg-gray-800 border border-gray-700 text-gray-300"
+          <div className="flex flex-wrap gap-3 mb-10">
+            {[
+              "Daily spend limits",
+              "Approved merchants",
+              "Expiry enforcement",
+              "Audit log",
+            ].map((f) => (
+              <span key={f} className="font-mono text-xs uppercase px-3 py-1.5 border" style={{ borderColor: "var(--border)", color: "var(--ink-2)" }}>
+                ▪ {f}
+              </span>
+            ))}
+          </div>
+
+          <div className="flex gap-3">
+            {connected ? (
+              <Link
+                href="/dashboard"
+                className="font-mono text-xs uppercase tracking-widest px-6 py-3 font-bold transition-opacity hover:opacity-80"
+                style={{ background: "var(--accent)", color: "#fff", letterSpacing: "0.1em" }}
+              >
+                Open Dashboard →
+              </Link>
+            ) : (
+              <WalletMultiButton
+                style={{
+                  background: "var(--accent)",
+                  color: "#fff",
+                  fontFamily: "var(--font-geist-mono)",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  padding: "12px 24px",
+                  border: "none",
+                  borderRadius: "2px",
+                  height: "auto",
+                }}
+              />
+            )}
+            <a
+              href={`https://explorer.solana.com/address/J1fCzmaSM61TePcnuVGFbB55oDGWS13eYcepFMd2pNVd?cluster=testnet`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-xs uppercase tracking-widest px-6 py-3 border font-bold transition-colors hover:bg-black/5"
+              style={{ borderColor: "var(--ink)", color: "var(--ink)", letterSpacing: "0.1em" }}
             >
-              {f}
-            </span>
-          ))}
+              View Program ↗
+            </a>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <WalletMultiButton className="!bg-violet-600 hover:!bg-violet-500 !rounded-lg !font-medium !transition-colors" />
-          {connected && (
-            <Link
-              href="/dashboard"
-              className="px-6 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white rounded-lg font-medium transition-colors"
-            >
-              Open Dashboard →
-            </Link>
-          )}
-        </div>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.6 }}
-        className="relative z-10 mt-24 font-mono text-xs text-gray-600 text-left"
-      >
-        <pre className="bg-gray-900/60 border border-gray-800 rounded-xl px-8 py-6 leading-6">
-          {`User Wallet ──► [ PolicyAccount PDA ]
-                         │ max 0.1 SOL/day
-                         │ approved: WeatherBot
-                         │ expires: +24h
-                         ▼
+        {/* Right: diagram */}
+        <div className="flex flex-col justify-center px-12 py-20">
+          <p className="font-mono text-xs uppercase tracking-widest mb-6" style={{ color: "var(--ink-3)" }}>
+            § 01 · HOW IT WORKS
+          </p>
+          <pre className="font-mono text-xs leading-7 border p-8" style={{ borderColor: "var(--border)", color: "var(--ink-2)", background: "var(--bg-card)" }}>
+{`User Wallet ──► [ PolicyAccount PDA ]
+                       │ max_daily_spend: 0.1 SOL
+                       │ approved_merchants: [WeatherBot]
+                       │ expiry: +24h
+                       ▼
 Agent Wallet ──► execute_constrained_payment()
-                         │
-                 ┌────────────┐
-                 │  APPROVED  │──► SOL transfer + PaymentRecord
-                 │  DENIED    │──► MerchantNotApproved / SpendLimitExceeded
-                 └────────────┘`}
-        </pre>
-      </motion.div>
+                       │
+               ┌──────────────────┐
+               │ ✓ APPROVED       │──► SOL transfer
+               │                  │    + PaymentRecord
+               │ ✗ DENIED         │──► MerchantNotApproved
+               │                  │    SpendLimitExceeded
+               └──────────────────┘`}
+          </pre>
+
+          <div className="grid grid-cols-3 gap-0 mt-8 border" style={{ borderColor: "var(--border)" }}>
+            {[
+              { n: "3", label: "Services" },
+              { n: "1", label: "Program" },
+              { n: "∞", label: "Agents" },
+            ].map((s) => (
+              <div key={s.label} className="px-6 py-5 border-r last:border-r-0" style={{ borderColor: "var(--border)" }}>
+                <p className="font-bold text-3xl" style={{ color: "var(--ink)" }}>{s.n}</p>
+                <p className="font-mono text-xs uppercase tracking-widest mt-1" style={{ color: "var(--ink-3)" }}>
+                  ▪ {s.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

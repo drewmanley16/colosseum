@@ -1,6 +1,5 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
 import { AgentEvent } from "@/hooks/useAgentSocket";
 import { lamportsToSol } from "@/lib/anchor";
 
@@ -38,64 +37,57 @@ export function TransactionFeed({ events }: TransactionFeedProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
-        Transaction Log
-      </h2>
+      <p className="font-mono text-xs uppercase tracking-widest mb-3" style={{ color: "var(--ink-3)" }}>
+        § Transaction Log
+      </p>
 
-      <div className="flex-1 overflow-y-auto space-y-2 max-h-96">
+      <div className="flex-1 overflow-y-auto space-y-2 max-h-80">
         {txEntries.length === 0 ? (
-          <p className="text-xs text-gray-600 italic">No transactions yet</p>
+          <p className="font-mono text-xs" style={{ color: "var(--ink-3)" }}>No transactions yet</p>
         ) : (
-          <AnimatePresence initial={false}>
-            {txEntries.map((tx) => (
-              <motion.div
-                key={tx.id}
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className={`rounded-lg border px-3 py-2 ${
-                  tx.success
-                    ? "bg-green-950/30 border-green-800/40"
-                    : "bg-red-950/30 border-red-800/40"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-xs font-bold ${
-                        tx.success ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
-                      {tx.success ? "✓ APPROVED" : "✗ DENIED"}
-                    </span>
-                    <span className="text-xs text-gray-300 font-mono">
-                      {tx.service}
-                    </span>
-                  </div>
-                  {tx.amount && (
-                    <span className="text-xs text-gray-400 font-mono">
-                      {lamportsToSol(tx.amount)} SOL
-                    </span>
-                  )}
+          txEntries.map((tx) => (
+            <div
+              key={tx.id}
+              className="border px-3 py-2.5"
+              style={{
+                borderColor: tx.success ? "var(--accent)" : "#dc2626",
+                background: tx.success ? "var(--accent-light)" : "#fef2f2",
+                borderLeftWidth: "3px",
+              }}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold uppercase tracking-widest" style={{ color: tx.success ? "var(--accent)" : "#dc2626" }}>
+                    {tx.success ? "✓ APPROVED" : "✗ DENIED"}
+                  </span>
+                  <span className="font-mono text-xs" style={{ color: "var(--ink)" }}>
+                    {tx.service}
+                  </span>
                 </div>
-
-                {tx.success && tx.signature && (
-                  <a
-                    href={`https://explorer.solana.com/tx/${tx.signature}?cluster=testnet`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-violet-400 hover:text-violet-300 font-mono"
-                  >
-                    {tx.signature.slice(0, 16)}... ↗
-                  </a>
+                {tx.amount != null && (
+                  <span className="font-mono text-xs font-bold" style={{ color: "var(--ink)" }}>
+                    {lamportsToSol(tx.amount)} SOL
+                  </span>
                 )}
+              </div>
 
-                {!tx.success && tx.error && (
-                  <p className="text-xs text-red-400/80 font-mono">{tx.error}</p>
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+              {tx.success && tx.signature && (
+                <a
+                  href={`https://explorer.solana.com/tx/${tx.signature}?cluster=testnet`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-xs hover:underline"
+                  style={{ color: "var(--accent)" }}
+                >
+                  {tx.signature.slice(0, 16)}... ↗
+                </a>
+              )}
+
+              {!tx.success && tx.error && (
+                <p className="font-mono text-xs" style={{ color: "#dc2626" }}>{tx.error}</p>
+              )}
+            </div>
+          ))
         )}
       </div>
     </div>

@@ -28,20 +28,14 @@ export default function Dashboard() {
   const { events, connected: wsConnected, startAgent, airdrop, getKeypair, clearEvents } =
     useAgentSocket();
 
-  // Fetch policy whenever agent pubkey or user wallet changes
   useEffect(() => {
     if (publicKey && agentPubkey) fetchPolicy();
   }, [publicKey, agentPubkey, fetchPolicy]);
 
-  // Re-fetch policy after payments come in
   useEffect(() => {
     const lastEvent = events[events.length - 1];
-    if (lastEvent?.type === "payment_success") {
-      fetchPolicy();
-    }
-    if (lastEvent?.type === "agent_done") {
-      setIsRunning(false);
-    }
+    if (lastEvent?.type === "payment_success") fetchPolicy();
+    if (lastEvent?.type === "agent_done") setIsRunning(false);
   }, [events, fetchPolicy]);
 
   async function handleGenerateAgent() {
@@ -77,60 +71,94 @@ export default function Dashboard() {
 
   if (!publicKey) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 gap-4">
-        <p className="text-gray-400">Connect your wallet to continue</p>
-        <WalletMultiButton />
-        <Link href="/" className="text-xs text-gray-600 hover:text-gray-400">
+      <main className="min-h-screen flex flex-col items-center justify-center gap-6" style={{ background: "var(--bg)" }}>
+        <p className="font-mono text-xs uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
+          Connect your wallet to continue
+        </p>
+        <WalletMultiButton
+          style={{
+            background: "var(--accent)",
+            color: "#fff",
+            fontFamily: "var(--font-geist-mono)",
+            fontSize: "12px",
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            padding: "10px 20px",
+            border: "none",
+            borderRadius: "2px",
+            height: "auto",
+          }}
+        />
+        <Link href="/" className="font-mono text-xs uppercase tracking-widest hover:underline" style={{ color: "var(--ink-3)" }}>
           ← Back
         </Link>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <main className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
       {/* Header */}
-      <header className="border-b border-gray-800 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="text-gray-500 hover:text-gray-300 text-sm">
-            ←
+      <header className="flex items-center justify-between px-8 py-4 border-b" style={{ borderColor: "var(--border)" }}>
+        <div className="flex items-center gap-4">
+          <Link href="/" className="font-mono text-xs uppercase tracking-widest hover:underline" style={{ color: "var(--ink-3)" }}>
+            ← Back
           </Link>
-          <span className="font-bold text-white">APPL</span>
-          <span className="text-xs text-gray-600 font-mono">
+          <span className="font-mono text-sm font-bold tracking-widest uppercase" style={{ color: "var(--ink)" }}>
+            ▪ APPL
+          </span>
+          <span className="font-mono text-xs" style={{ color: "var(--ink-3)" }}>
             {publicKey.toString().slice(0, 8)}...
           </span>
         </div>
-        <WalletMultiButton className="!text-sm !py-1.5 !px-3" />
+        <WalletMultiButton
+          style={{
+            background: "transparent",
+            color: "var(--ink)",
+            fontFamily: "var(--font-geist-mono)",
+            fontSize: "11px",
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            padding: "6px 14px",
+            border: "1px solid var(--border)",
+            borderRadius: "2px",
+            height: "auto",
+          }}
+        />
       </header>
 
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Agent Wallet Setup */}
-        <div className="mb-6 bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
-            Agent Wallet
-          </h2>
+      <div className="flex-1 p-6 max-w-7xl mx-auto w-full">
+        {/* Agent Wallet Bar */}
+        <div className="border p-5 mb-6" style={{ borderColor: "var(--border)", background: "var(--bg-card)" }}>
+          <p className="font-mono text-xs uppercase tracking-widest mb-4" style={{ color: "var(--ink-3)" }}>
+            § Agent Wallet
+          </p>
           {!agentPubkey ? (
             <button
               onClick={handleGenerateAgent}
-              className="px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm font-medium transition-colors"
+              className="font-mono text-xs font-bold uppercase tracking-widest px-5 py-2.5 border transition-colors hover:opacity-80"
+              style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--accent-light)", letterSpacing: "0.1em" }}
             >
-              Generate Agent Wallet
+              ▪ Generate Agent Wallet
             </button>
           ) : (
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-6">
               <div>
-                <p className="text-xs text-gray-500 mb-0.5">Agent Address</p>
-                <p className="font-mono text-sm text-white">{agentPubkey}</p>
+                <p className="font-mono text-xs uppercase tracking-widest mb-1" style={{ color: "var(--ink-3)" }}>Address</p>
+                <p className="font-mono text-sm font-bold" style={{ color: "var(--ink)" }}>{agentPubkey}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 mb-0.5">Balance</p>
-                <p className="font-mono text-sm text-white">
+                <p className="font-mono text-xs uppercase tracking-widest mb-1" style={{ color: "var(--ink-3)" }}>Balance</p>
+                <p className="font-mono text-sm font-bold" style={{ color: "var(--ink)" }}>
                   {agentBalance != null ? `${agentBalance.toFixed(3)} SOL` : "—"}
                 </p>
               </div>
               <button
                 onClick={handleAirdrop}
-                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg text-sm transition-colors"
+                className="font-mono text-xs font-bold uppercase tracking-widest px-4 py-2 border transition-opacity hover:opacity-70"
+                style={{ borderColor: "var(--border)", color: "var(--ink-2)", letterSpacing: "0.08em" }}
               >
                 Airdrop 1 SOL
               </button>
@@ -139,12 +167,12 @@ export default function Dashboard() {
         </div>
 
         {/* 3-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 border" style={{ borderColor: "var(--border)" }}>
           {/* Left: Policy Manager */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
-              Policy Manager
-            </h2>
+          <div className="p-6 border-r" style={{ borderColor: "var(--border)", background: "var(--bg-card)" }}>
+            <p className="font-mono text-xs uppercase tracking-widest mb-5" style={{ color: "var(--ink-3)" }}>
+              § Policy Manager
+            </p>
 
             {policy ? (
               <div className="space-y-6">
@@ -154,21 +182,23 @@ export default function Dashboard() {
                   isActive={policy.isActive}
                 />
 
-                <div>
-                  <p className="text-xs text-gray-500 mb-2">Approved Merchants</p>
+                <div className="border-t pt-4" style={{ borderColor: "var(--border)" }}>
+                  <p className="font-mono text-xs uppercase tracking-widest mb-2" style={{ color: "var(--ink-3)" }}>
+                    ▪ Approved Merchants
+                  </p>
                   {policy.approvedMerchants.map((m) => (
-                    <div key={m} className="flex items-center gap-2 mb-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                      <span className="font-mono text-xs text-gray-300">
+                    <div key={m} className="flex items-center gap-2 mb-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--accent)" }} />
+                      <span className="font-mono text-xs" style={{ color: "var(--ink-2)" }}>
                         {m.slice(0, 8)}...
                       </span>
                     </div>
                   ))}
                 </div>
 
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Expires</p>
-                  <p className="text-xs text-gray-300">
+                <div className="border-t pt-4" style={{ borderColor: "var(--border)" }}>
+                  <p className="font-mono text-xs uppercase tracking-widest mb-1" style={{ color: "var(--ink-3)" }}>▪ Expires</p>
+                  <p className="font-mono text-xs" style={{ color: "var(--ink-2)" }}>
                     {new Date(policy.expiry * 1000).toLocaleString()}
                   </p>
                 </div>
@@ -177,19 +207,17 @@ export default function Dashboard() {
                   href={`https://explorer.solana.com/address/${policy.pda}?cluster=testnet`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-xs text-violet-400 hover:text-violet-300 font-mono"
+                  className="block font-mono text-xs uppercase tracking-widest hover:underline"
+                  style={{ color: "var(--accent)" }}
                 >
                   View on Explorer ↗
                 </a>
               </div>
             ) : (
               agentPubkey ? (
-                <PolicyForm
-                  onSubmit={createPolicy}
-                  loading={policyLoading}
-                />
+                <PolicyForm onSubmit={createPolicy} loading={policyLoading} />
               ) : (
-                <p className="text-xs text-gray-600 italic">
+                <p className="font-mono text-xs" style={{ color: "var(--ink-3)" }}>
                   Generate an agent wallet first
                 </p>
               )
@@ -197,26 +225,31 @@ export default function Dashboard() {
           </div>
 
           {/* Middle: Agent Monitor */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col">
+          <div className="p-6 border-r flex flex-col" style={{ borderColor: "var(--border)" }}>
             <AgentTerminal events={events} isConnected={wsConnected} />
 
-            <div className="mt-4 pt-4 border-t border-gray-800">
+            <div className="mt-5 pt-5 border-t" style={{ borderColor: "var(--border)" }}>
               <button
                 onClick={handleRunAgent}
                 disabled={!policy || isRunning || !agentSecretKey}
-                className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-medium text-sm transition-colors"
+                className="w-full py-3 font-mono text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80 disabled:opacity-30"
+                style={{
+                  background: isRunning ? "var(--ink)" : "var(--accent)",
+                  color: "#fff",
+                  letterSpacing: "0.1em",
+                }}
               >
                 {isRunning ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                     Agent Running...
                   </span>
                 ) : (
-                  "Run Agent"
+                  "▪ Run Agent"
                 )}
               </button>
-              {!policy && (
-                <p className="text-xs text-gray-600 text-center mt-2">
+              {!policy && agentPubkey && (
+                <p className="font-mono text-xs text-center mt-2" style={{ color: "var(--ink-3)" }}>
                   Create a policy first
                 </p>
               )}
@@ -224,11 +257,11 @@ export default function Dashboard() {
           </div>
 
           {/* Right: Transaction Log */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div className="p-6">
             <TransactionFeed events={events} />
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
