@@ -60,8 +60,12 @@ export function useAgentSocket() {
     [clearEvents]
   );
 
-  const airdrop = useCallback(async () => {
-    const res = await fetch(`${AGENT_URL}/api/agent/airdrop`, { method: "POST" });
+  const airdrop = useCallback(async (agentPublicKey?: string) => {
+    const res = await fetch(`${AGENT_URL}/api/agent/airdrop`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agentPublicKey }),
+    });
     return res.json();
   }, []);
 

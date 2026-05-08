@@ -53,7 +53,7 @@ export default function Dashboard() {
   async function handleAirdrop() {
     const tid = toast.loading("Requesting airdrop...");
     try {
-      const result = await airdrop();
+      const result = await airdrop(agentPubkey ?? undefined);
       if (!result.success) throw new Error(result.error || "Airdrop failed");
       const bal = typeof result.balance === "number" ? result.balance : null;
       setAgentBalance(bal);

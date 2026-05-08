@@ -137,20 +137,17 @@ export async function executeConstrainedPayment(
   }
 }
 
-export async function airdropAgent(amountSol: number = 1): Promise<string> {
+export async function airdropAgent(amountSol: number = 1, publicKeyStr?: string): Promise<string> {
   const connection = getConnection();
-  const agentKeypair = loadAgentKeypair();
-  const sig = await connection.requestAirdrop(
-    agentKeypair.publicKey,
-    amountSol * 1e9
-  );
+  const pubkey = publicKeyStr ? new PublicKey(publicKeyStr) : loadAgentKeypair().publicKey;
+  const sig = await connection.requestAirdrop(pubkey, amountSol * 1e9);
   await connection.confirmTransaction(sig, "confirmed");
   return sig;
 }
 
-export async function getAgentBalance(): Promise<number> {
+export async function getAgentBalance(publicKeyStr?: string): Promise<number> {
   const connection = getConnection();
-  const agentKeypair = loadAgentKeypair();
-  const lamports = await connection.getBalance(agentKeypair.publicKey);
+  const pubkey = publicKeyStr ? new PublicKey(publicKeyStr) : loadAgentKeypair().publicKey;
+  const lamports = await connection.getBalance(pubkey);
   return lamports / 1e9;
 }

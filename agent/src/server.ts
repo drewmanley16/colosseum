@@ -49,10 +49,11 @@ app.get("/api/agent/keypair", (_req, res) => {
   });
 });
 
-app.post("/api/agent/airdrop", async (_req, res) => {
+app.post("/api/agent/airdrop", async (req, res) => {
   try {
-    const sig = await airdropAgent(1);
-    const balance = await getAgentBalance();
+    const { agentPublicKey } = req.body as { agentPublicKey?: string };
+    const sig = await airdropAgent(1, agentPublicKey);
+    const balance = await getAgentBalance(agentPublicKey);
     res.json({ success: true, signature: sig, balance });
   } catch (err: unknown) {
     res.status(500).json({ success: false, error: String(err) });
