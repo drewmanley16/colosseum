@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { randomUUID } from "crypto";
 import * as dotenv from "dotenv";
 import { runAgent } from "./agent";
+import { startSpectrum } from "./spectrum";
 import { airdropAgent, getAgentBalance, fetchPaymentHistory, fetchOnChainServices } from "./tools/solana";
 import { AgentEvent } from "./types";
 import { Keypair, PublicKey } from "@solana/web3.js";
@@ -182,4 +183,6 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`APPL Agent Server running on http://localhost:${PORT}`);
   console.log(`WebSocket available at ws://localhost:${PORT}`);
+  // Start Spectrum messaging (iMessage + terminal) in parallel — non-blocking
+  startSpectrum().catch((err) => console.error("[spectrum] Failed to start:", err));
 });
