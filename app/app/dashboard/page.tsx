@@ -19,6 +19,7 @@ import { AgentTerminal } from "@/components/AgentTerminal";
 import { TransactionFeed } from "@/components/TransactionFeed";
 import { AgentFlow } from "@/components/AgentFlow";
 import { ServiceResultPanel } from "@/components/ServiceResultPanel";
+import { AgentHistory } from "@/components/AgentHistory";
 import toast from "react-hot-toast";
 
 export default function Dashboard() {
@@ -31,10 +32,13 @@ export default function Dashboard() {
   );
   const [agentBalance, setAgentBalance] = useState<number | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [mission, setMission] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("agent_mission") || "" : ""
+  );
 
   const { policy, loading: policyLoading, fetchPolicy, createPolicy, updatePolicy, revokePolicy } =
     usePolicy(agentPubkey);
-  const { events, connected: wsConnected, startAgent, airdrop, getKeypair, fetchBalance, clearEvents } =
+  const { events, connected: wsConnected, startAgent, airdrop, getKeypair, fetchBalance, fetchHistory, clearEvents } =
     useAgentSocket();
 
   // Fetch policy on mount and when agent/wallet changes
@@ -121,7 +125,8 @@ export default function Dashboard() {
     if (!publicKey || !agentSecretKey) return;
     setIsRunning(true);
     clearEvents();
-    await startAgent(publicKey.toString(), agentSecretKey);
+    localStorage.setItem("agent_mission", mission);
+    await startAgent(publicKey.toString(), agentSecretKey, mission || undefined);
   }
 
   if (!publicKey) {
@@ -166,6 +171,9 @@ export default function Dashboard() {
           <span className="font-mono text-xs" style={{ color: "var(--ink-3)" }}>
             {publicKey.toString().slice(0, 8)}...
           </span>
+          <Link href="/agents" className="font-mono text-xs uppercase tracking-widest" style={{ color: "var(--ink-3)" }}>
+            Network ↗
+          </Link>
         </div>
         <WalletMultiButton
           style={{
@@ -273,6 +281,30 @@ export default function Dashboard() {
           <div className="p-6 border-r flex flex-col" style={{ borderColor: "var(--border)" }}>
             <AgentTerminal events={events} isConnected={wsConnected} />
             <div className="mt-5 pt-5 border-t" style={{ borderColor: "var(--border)" }}>
+              {/* Mission input */}
+              <div className="mb-3">
+                <label className="block font-mono text-xs uppercase tracking-widest mb-1.5" style={{ color: "var(--ink-3)" }}>
+                  Mission (optional)
+                </label>
+                <textarea
+                  value={mission}
+                  onChange={(e) => setMission(e.target.value)}
+                  placeholder="e.g. Get the weather forecast and current SOL price"
+                  rows={2}
+                  style={{
+                    width: "100%",
+                    fontFamily: "var(--font-geist-mono)",
+                    fontSize: "0.75rem",
+                    background: "var(--bg)",
+                    border: "1px solid var(--border)",
+                    color: "var(--ink)",
+                    padding: "0.5rem 0.65rem",
+                    resize: "none",
+                    outline: "none",
+                    lineHeight: 1.5,
+                  }}
+                />
+              </div>
               <button
                 onClick={handleRunAgent}
                 disabled={!policy || isRunning || !agentSecretKey}
@@ -300,9 +332,24 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Right: Transaction Log */}
-          <div className="p-6">
-            <TransactionFeed events={events} />
+          {/* Right: Transaction Log + History */}
+          <div className="flex flex-col" style={{ minHeight: 0 }}>
+            <div className="p-6 border-b" style={{ borderColor: "var(--border)" }}>
+              <TransactionFeed events={events} />
+            </div>
+            {policy?.pda && (
+              <div className="flex-1" style={{ minHeight: "280px" }}>
+                <AgentHistory
+                  policyPDA={policy.pda}
+                  fetchHistory={fetchHistory}
+                  knownWallets={{
+                    "2LxHNHNvQHZZUuxU6eYzm7wb3nDqKbXXzYtXefrhSdHX": "WeatherBot",
+                    "DRWzZaXffPyCV1wrVN5FTSQTrnxbLACKZBDG1S1vnKfm": "PriceBot",
+                    "whcrCa5tJRSYAGWtsbkaFXtWvCVps3CMH2Cav2jrc2s": "NewsAgent",
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

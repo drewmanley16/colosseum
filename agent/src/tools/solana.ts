@@ -7,7 +7,7 @@ import {
 import { AnchorProvider, Program, BN } from "@coral-xyz/anchor";
 import * as anchor from "@coral-xyz/anchor";
 import bs58 from "bs58";
-import { PaymentResult, PolicyState } from "../types";
+import { PaymentResult, PolicyState, ServiceAgent } from "../types";
 import IDL from "../../lib/idl/appl.json";
 
 const PROGRAM_ID = new PublicKey("J1fCzmaSM61TePcnuVGFbB55oDGWS13eYcepFMd2pNVd");
@@ -136,6 +136,74 @@ export async function executeConstrainedPayment(
     // Fall back to message, stripping noisy prefixes
     const display = logLine || (message.includes("insufficient lamports") ? "InsufficientFunds — airdrop the agent wallet" : message.split("\n")[0]);
     return { success: false, error: display, errorCode };
+  }
+}
+
+export async function fetchOnChainServices(): Promise<ServiceAgent[]> {
+  try {
+    const connection = getConnection();
+    const provider = new AnchorProvider(
+      connection,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { publicKey: PublicKey.default, signTransaction: async (tx: any) => tx, signAllTransactions: async (txs: any[]) => txs } as any,
+      {}
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const program = new Program(IDL as any, provider);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = await (program.account as any).agentIdentity.all();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return raw.filter((item: any) => item.account.isActive).map((item: any) => {
+      const url: string = item.account.serviceUrl;
+      const name: string = item.account.name;
+      return {
+        id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        name,
+        description: `On-chain registered agent`,
+        wallet: item.account.authority.toString(),
+        feeLamports: item.account.feeLamports.toNumber(),
+        category: url.includes("weather") ? "data" : url.includes("price") ? "defi" : "content",
+        serviceUrl: url,
+      } satisfies ServiceAgent;
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchPaymentHistory(policyPDA: PublicKey): Promise<Array<{
+  payer: string;
+  recipient: string;
+  amount: number;
+  timestamp: number;
+  nonce: number;
+  pubkey: string;
+}>> {
+  try {
+    const connection = getConnection();
+    const provider = new AnchorProvider(
+      connection,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { publicKey: PublicKey.default, signTransaction: async (tx: any) => tx, signAllTransactions: async (txs: any[]) => txs } as any,
+      {}
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const program = new Program(IDL as any, provider);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = await (program.account as any).paymentRecord.all([
+      { memcmp: { offset: 8, bytes: policyPDA.toBase58() } },
+    ]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return raw.map((item: any) => ({
+      pubkey: item.publicKey.toString(),
+      payer: item.account.payer.toString(),
+      recipient: item.account.recipient.toString(),
+      amount: item.account.amount.toNumber(),
+      timestamp: item.account.timestamp.toNumber(),
+      nonce: item.account.nonce.toNumber(),
+    })).sort((a: { timestamp: number }, b: { timestamp: number }) => b.timestamp - a.timestamp);
+  } catch {
+    return [];
   }
 }
 

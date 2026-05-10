@@ -8,6 +8,7 @@ export type AgentEventType =
   | "payment_denied"
   | "service_result"
   | "agent_done"
+  | "network_activity"
   | "error";
 
 export interface AgentEvent {
@@ -24,6 +25,7 @@ export interface ServiceAgent {
   wallet: string;
   feeLamports: number;
   category: string;
+  serviceUrl?: string;
 }
 
 export interface PolicyState {

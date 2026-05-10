@@ -36,6 +36,19 @@ export function getAgentIdentityPDA(authorityPubkey: PublicKey) {
   );
 }
 
+export function getReadOnlyProgram(connection: Connection) {
+  const dummyWallet = {
+    publicKey: PublicKey.default,
+    signTransaction: async <T>(tx: T) => tx,
+    signAllTransactions: async <T>(txs: T[]) => txs,
+  };
+  const provider = new AnchorProvider(connection, dummyWallet as AnchorWallet, {
+    commitment: "confirmed",
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new Program(IDL as any, provider);
+}
+
 export function lamportsToSol(lamports: number): string {
   return (lamports / 1e9).toFixed(4);
 }

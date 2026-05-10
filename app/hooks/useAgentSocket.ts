@@ -12,6 +12,7 @@ export type AgentEventType =
   | "payment_denied"
   | "service_result"
   | "agent_done"
+  | "network_activity"
   | "error";
 
 export interface AgentEvent {
@@ -21,11 +22,20 @@ export interface AgentEvent {
   timestamp: number;
 }
 
+export interface NetworkActivity {
+  owner: string;
+  action: string;
+  service?: string;
+  amount?: number;
+  timestamp: number;
+}
+
 const AGENT_URL = process.env.NEXT_PUBLIC_AGENT_URL || "http://localhost:3001";
 const WS_URL = AGENT_URL.replace(/^http/, "ws");
 
 export function useAgentSocket() {
   const [events, setEvents] = useState<AgentEvent[]>([]);
+  const [networkFeed, setNetworkFeed] = useState<NetworkActivity[]>([]);
   const [connected, setConnected] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const ws = useRef<WebSocket | null>(null);
@@ -49,6 +59,10 @@ export function useAgentSocket() {
         try {
           const msg = JSON.parse(e.data);
           if (msg.type === "session") { setSessionId(msg.sessionId); return; }
+          if (msg.type === "network_activity") {
+            setNetworkFeed((prev) => [msg as NetworkActivity, ...prev].slice(0, 50));
+            return;
+          }
           setEvents((prev) => [...prev, msg as AgentEvent]);
         } catch { /* ignore */ }
       };
@@ -65,13 +79,13 @@ export function useAgentSocket() {
   const clearEvents = useCallback(() => setEvents([]), []);
 
   const startAgent = useCallback(
-    async (ownerAddress: string, agentSecretKey: string) => {
+    async (ownerAddress: string, agentSecretKey: string, mission?: string) => {
       if (!sessionId) throw new Error("WebSocket session not ready");
       clearEvents();
       await fetch(`${AGENT_URL}/api/agent/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerAddress, agentSecretKey, sessionId }),
+        body: JSON.stringify({ ownerAddress, agentSecretKey, sessionId, mission }),
       });
     },
     [clearEvents, sessionId]
@@ -101,5 +115,43 @@ export function useAgentSocket() {
     }
   }, []);
 
-  return { events, connected, sessionId, startAgent, airdrop, getKeypair, fetchBalance, clearEvents };
+  const fetchHistory = useCallback(async (policyPDA: string) => {
+    try {
+      const res = await fetch(`${AGENT_URL}/api/agent/history?policyPDA=${policyPDA}`);
+      const data = await res.json();
+      return (data.history || []) as Array<{
+        pubkey: string;
+        payer: string;
+        recipient: string;
+        amount: number;
+        timestamp: number;
+        nonce: number;
+      }>;
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch(`${AGENT_URL}/api/stats`);
+      return await res.json() as { activeSessions: number; totalPayments: number };
+    } catch {
+      return null;
+    }
+  }, []);
+
+  return {
+    events,
+    networkFeed,
+    connected,
+    sessionId,
+    startAgent,
+    airdrop,
+    getKeypair,
+    fetchBalance,
+    fetchHistory,
+    fetchStats,
+    clearEvents,
+  };
 }
